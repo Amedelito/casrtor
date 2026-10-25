@@ -1,0 +1,46 @@
+name: Build Normsafio
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build plugin with Maven
+        shell: bash
+        run: |
+          if [ -f "pom.xml" ]; then
+            mvn --batch-mode --no-transfer-progress clean package
+          elif [ -f "Normsafio/pom.xml" ]; then
+            mvn --batch-mode --no-transfer-progress -f Normsafio/pom.xml clean package
+          else
+            echo "ERROR: No se encuentra pom.xml ni Normsafio/pom.xml. Comprueba la estructura del repositorio."
+            exit 1
+          fi
+
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: Normsafio-2.1-plugin
+          path: |
+            target/Normsafio-2.1.jar
+            Normsafio/target/Normsafio-2.1.jar
+          if-no-files-found: error
+          retention-days: 14
